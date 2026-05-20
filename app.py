@@ -15,15 +15,11 @@ st.set_page_config(
 )
 
 # =========================================================
-# DB CONNECTION
+# DB SETUP
 # =========================================================
 
 conn = sqlite3.connect("finance.db", check_same_thread=False)
 cursor = conn.cursor()
-
-# =========================================================
-# AUTO MIGRATION SAFE TABLES (FIXED ERROR SOURCE)
-# =========================================================
 
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS users (
@@ -50,7 +46,7 @@ CREATE TABLE IF NOT EXISTS expenses (
 conn.commit()
 
 # =========================================================
-# SESSION STATE
+# SESSION
 # =========================================================
 
 if "logged_in" not in st.session_state:
@@ -60,7 +56,7 @@ if "user" not in st.session_state:
     st.session_state.user = ""
 
 # =========================================================
-# HASH PASSWORD
+# PASSWORD HASH
 # =========================================================
 
 def hash_password(p):
@@ -76,7 +72,6 @@ if not st.session_state.logged_in:
 
     mode = st.sidebar.radio("Auth", ["Login", "Signup"])
 
-    # ---------------- SIGNUP ----------------
     if mode == "Signup":
 
         u = st.text_input("Username")
@@ -93,7 +88,6 @@ if not st.session_state.logged_in:
             except:
                 st.error("User already exists")
 
-    # ---------------- LOGIN ----------------
     else:
 
         u = st.text_input("Username")
@@ -122,66 +116,96 @@ else:
     user = st.session_state.user
 
     # =========================================================
-    # SAFE UI THEME (NO VISIBILITY BUGS)
+    # SAFE FINTECH LIGHT THEME (NO VISIBILITY ISSUES)
     # =========================================================
 
     st.markdown("""
     <style>
 
+    /* LIGHT BACKGROUND (BEST READABILITY) */
     .stApp {
-        background: linear-gradient(135deg, #0f172a, #1e293b);
-        color: #E5E7EB;
+        background: #f5f7fb !important;
+        color: #0f172a !important;
     }
 
+    /* HEADINGS */
     h1, h2, h3 {
-        color: #00FFD1 !important;
+        color: #0ea5e9 !important;
         font-weight: 800;
     }
 
-    input, textarea {
-        background-color: #111827 !important;
-        color: #E5E7EB !important;
+    /* TEXT */
+    p, span, label, div {
+        color: #0f172a !important;
     }
 
+    /* SIDEBAR */
+    section[data-testid="stSidebar"] {
+        background-color: #0f172a !important;
+        color: white !important;
+    }
+
+    section[data-testid="stSidebar"] * {
+        color: white !important;
+    }
+
+    /* INPUTS */
+    input, textarea {
+        background-color: white !important;
+        color: #0f172a !important;
+        border: 1px solid #cbd5e1 !important;
+    }
+
+    /* SELECTBOX (SAFE) */
+    div[data-baseweb="select"] {
+        background-color: white !important;
+        color: #0f172a !important;
+    }
+
+    div[role="option"] {
+        background-color: white !important;
+        color: #0f172a !important;
+    }
+
+    div[role="option"]:hover {
+        background-color: #0ea5e9 !important;
+        color: white !important;
+    }
+
+    /* BUTTON */
     .stButton > button {
-        background: linear-gradient(90deg, #00FFD1, #00C2FF);
-        color: black;
+        background: linear-gradient(90deg, #0ea5e9, #22c55e) !important;
+        color: white !important;
         font-weight: 700;
         border-radius: 10px;
         width: 100%;
     }
 
+    /* METRICS */
     [data-testid="stMetricValue"] {
-        color: #00FFD1 !important;
+        color: #0ea5e9 !important;
         font-size: 26px;
         font-weight: 800;
-    }
-
-    section[data-testid="stSidebar"] {
-        background-color: #0f172a;
     }
 
     </style>
     """, unsafe_allow_html=True)
 
     # =========================================================
-    # SAFE DATA LOAD (FIX FOR YOUR ERROR)
+    # LOAD DATA
     # =========================================================
 
-    try:
-        df = pd.read_sql_query(
-            "SELECT * FROM expenses WHERE username=?",
-            conn,
-            params=(user,)
-        )
-    except:
-        df = pd.DataFrame()
+    df = pd.read_sql_query(
+        "SELECT * FROM expenses WHERE username=?",
+        conn,
+        params=(user,)
+    )
 
     # =========================================================
     # SIDEBAR
     # =========================================================
 
-    st.sidebar.title(f"💡 SmartSpend")
+    st.sidebar.title(f"💡 {user}")
 
     page = st.sidebar.radio(
         "Navigation",
@@ -194,7 +218,7 @@ else:
 
     if page == "🏠 Dashboard":
 
-        st.title("💰 Dashboard")
+        st.title("💰 Financial Dashboard")
 
         income = df[df["type"] == "Income"]["amount"].sum() if not df.empty else 0
         expense = df[df["type"] == "Expense"]["amount"].sum() if not df.empty else 0
@@ -253,8 +277,6 @@ else:
 
     elif page == "📋 History":
 
-        st.subheader("Transactions")
-
         st.dataframe(df, use_container_width=True)
 
     # =========================================================
@@ -287,7 +309,6 @@ else:
     # =========================================================
 
     elif page == "🚪 Logout":
-
         st.session_state.logged_in = False
         st.session_state.user = ""
         st.rerun()
