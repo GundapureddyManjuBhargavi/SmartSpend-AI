@@ -106,7 +106,7 @@ if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
 # ======================================================
-# PASSWORD HASH
+# PASSWORD HASH FUNCTION
 # ======================================================
 
 def hash_password(password):
@@ -261,7 +261,7 @@ else:
     if dark_mode:
 
         bg_color = "#0E1117"
-        text_color = "white"
+        text_color = "#FFFFFF"
         card_bg = "#161B22"
         input_bg = "#1E1E1E"
 
@@ -273,26 +273,40 @@ else:
         input_bg = "#FFFFFF"
 
     # ==================================================
-    # CUSTOM CSS
+    # PROFESSIONAL CSS
     # ==================================================
 
     st.markdown(f"""
     <style>
+
+    /* MAIN APP */
 
     .stApp {{
         background-color: {bg_color};
         color: {text_color};
     }}
 
+    /* GLOBAL TEXT */
+
     html,
     body,
-    [class*="css"] {{
+    p,
+    span,
+    label,
+    div,
+    textarea,
+    input {{
         color: {text_color} !important;
     }}
 
-    h1, h2, h3 {{
+    /* HEADINGS */
+
+    h1, h2, h3, h4 {{
         color: #00FFD1 !important;
+        font-weight: bold;
     }}
+
+    /* SIDEBAR */
 
     section[data-testid="stSidebar"] {{
         background-color: {card_bg};
@@ -302,36 +316,56 @@ else:
         color: {text_color} !important;
     }}
 
+    /* INPUT BOXES */
+
     .stTextInput input,
     .stNumberInput input,
     .stDateInput input,
     textarea {{
 
         background-color: {input_bg} !important;
-        color: white !important;
 
-        -webkit-text-fill-color: white !important;
+        color: {text_color} !important;
+
+        -webkit-text-fill-color: {text_color} !important;
+
+        caret-color: {text_color} !important;
 
         border-radius: 10px !important;
+
         border: 2px solid #00FFD1 !important;
     }}
+
+    /* PLACEHOLDER */
+
+    input::placeholder,
+    textarea::placeholder {{
+        color: gray !important;
+    }}
+
+    /* SELECT BOX */
 
     div[data-baseweb="select"] > div {{
 
         background-color: {input_bg} !important;
-        color: white !important;
+
+        color: {text_color} !important;
 
         border-radius: 10px !important;
+
         border: 2px solid #00FFD1 !important;
     }}
 
     div[data-baseweb="select"] * {{
-        color: white !important;
+        color: {text_color} !important;
     }}
+
+    /* BUTTON */
 
     .stButton > button {{
 
         background-color: #00FFD1 !important;
+
         color: black !important;
 
         border-radius: 10px !important;
@@ -339,18 +373,46 @@ else:
         font-weight: bold !important;
 
         height: 3em;
+
         width: 100%;
     }}
 
     .stButton > button:hover {{
 
         background-color: #00c9a7 !important;
+
         color: white !important;
     }}
 
+    /* METRICS */
+
     [data-testid="stMetricValue"] {{
         color: #00FFD1 !important;
+
         font-size: 30px;
+
+        font-weight: bold;
+    }}
+
+    /* TABLE */
+
+    table {{
+        color: {text_color} !important;
+    }}
+
+    /* FOOTER */
+
+    footer {{
+        visibility: hidden;
+    }}
+
+    hr {{
+        border: 1px solid gray;
+    }}
+
+    center {{
+        color: {text_color} !important;
+        font-size: 16px;
         font-weight: bold;
     }}
 
@@ -594,33 +656,6 @@ else:
                 "text/csv"
             )
 
-            st.subheader(
-                "🗑️ Delete Expense"
-            )
-
-            delete_id = st.number_input(
-                "Expense ID",
-                min_value=1
-            )
-
-            if st.button(
-                "Delete Expense"
-            ):
-
-                cursor.execute(
-                    """
-                    DELETE FROM expenses
-                    WHERE id=?
-                    """,
-                    (delete_id,)
-                )
-
-                conn.commit()
-
-                st.success(
-                    "Expense Deleted Successfully"
-                )
-
     # ==================================================
     # ANALYTICS
     # ==================================================
@@ -652,29 +687,8 @@ else:
                 )
             )
 
-            fig.update_layout(
-                title="Monthly Expense Trend"
-            )
-
             st.plotly_chart(
                 fig,
-                use_container_width=True
-            )
-
-            category_data = (
-                df.groupby("category")["amount"]
-                .sum()
-                .reset_index()
-            )
-
-            fig2 = px.treemap(
-                category_data,
-                path=["category"],
-                values="amount"
-            )
-
-            st.plotly_chart(
-                fig2,
                 use_container_width=True
             )
 
@@ -755,12 +769,6 @@ else:
                 "💡 Track subscriptions carefully."
             )
 
-        else:
-
-            st.warning(
-                "No expense data available."
-            )
-
     # ==================================================
     # LOGOUT
     # ==================================================
@@ -768,6 +776,7 @@ else:
     elif menu == "🚪 Logout":
 
         st.session_state.logged_in = False
+
         st.rerun()
 
     # ==================================================
