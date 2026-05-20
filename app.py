@@ -5,14 +5,13 @@ import plotly.express as px
 import hashlib
 
 # =========================================================
-# PAGE CONFIG
+# CONFIG
 # =========================================================
 
 st.set_page_config(
     page_title="SmartSpend AI Pro",
     page_icon="💰",
-    layout="wide",
-    initial_sidebar_state="expanded"
+    layout="wide"
 )
 
 # =========================================================
@@ -51,55 +50,48 @@ conn.commit()
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
-if "dark_mode" not in st.session_state:
-    st.session_state.dark_mode = True
-
 # =========================================================
 # PASSWORD HASH
 # =========================================================
 
-def hash_password(password):
-    return hashlib.sha256(password.encode()).hexdigest()
+def hash_password(p):
+    return hashlib.sha256(p.encode()).hexdigest()
 
 # =========================================================
-# LOGIN / SIGNUP
+# AUTH SYSTEM
 # =========================================================
 
 if not st.session_state.logged_in:
 
     st.title("💰 SmartSpend AI Pro")
 
-    auth = st.sidebar.radio("Choose Option", ["Login", "Signup"])
+    choice = st.sidebar.radio("Choose Option", ["Login", "Signup"])
 
-    if auth == "Signup":
+    if choice == "Signup":
 
-        st.subheader("Create Account")
-
-        username = st.text_input("Username")
-        password = st.text_input("Password", type="password")
+        u = st.text_input("Username")
+        p = st.text_input("Password", type="password")
 
         if st.button("Create Account"):
             try:
                 cursor.execute(
                     "INSERT INTO users (username, password) VALUES (?, ?)",
-                    (username, hash_password(password))
+                    (u, hash_password(p))
                 )
                 conn.commit()
                 st.success("Account Created ✅")
             except:
-                st.error("Username already exists")
+                st.error("User already exists")
 
     else:
 
-        st.subheader("Login")
-
-        username = st.text_input("Username")
-        password = st.text_input("Password", type="password")
+        u = st.text_input("Username")
+        p = st.text_input("Password", type="password")
 
         if st.button("Login"):
             cursor.execute(
                 "SELECT * FROM users WHERE username=? AND password=?",
-                (username, hash_password(password))
+                (u, hash_password(p))
             )
 
             if cursor.fetchone():
@@ -114,106 +106,34 @@ if not st.session_state.logged_in:
 
 else:
 
-    # SIDEBAR
     st.sidebar.title("💡 SmartSpend AI Pro")
-
-    st.session_state.dark_mode = st.sidebar.toggle(
-        "🌙 Dark Mode",
-        value=st.session_state.dark_mode
-    )
 
     page = st.sidebar.radio(
         "Navigation",
         ["🏠 Dashboard", "➕ Add Expense", "📋 View Expenses", "📊 Analytics", "🎯 Savings Goals", "🚪 Logout"]
     )
 
-    dark = st.session_state.dark_mode
-
     # =========================================================
-    # SAFE THEME (NO VISIBILITY BUG)
+    # SIMPLE CLEAN THEME (NO CSS BUGS)
     # =========================================================
 
-    if dark:
-        bg = "#0B1220"
-        text = "#FFFFFF"
-        card = "#111827"
-        input_bg = "#1E293B"
-    else:
-        bg = "#F5F7FB"
-        text = "#0F172A"
-        card = "#FFFFFF"
-        input_bg = "#FFFFFF"
-
-    # =========================================================
-    # CLEAN CSS (FINAL SAFE VERSION)
-    # =========================================================
-
-    st.markdown(f"""
+    st.markdown("""
     <style>
+        .stApp {
+            background-color: #0B1220;
+            color: white;
+        }
 
-    .stApp {{
-        background-color: {bg} !important;
-        color: {text} !important;
-    }}
+        h1, h2, h3, h4 {
+            color: #00FFD1 !important;
+        }
 
-    html, body, p, span, label, div, h1, h2, h3 {{
-        color: {text} !important;
-    }}
-
-    section[data-testid="stSidebar"] {{
-        background-color: {card} !important;
-    }}
-
-    section[data-testid="stSidebar"] * {{
-        color: {text} !important;
-    }}
-
-    /* INPUT FIX */
-    input, textarea {{
-        background-color: {input_bg} !important;
-        color: {text} !important;
-        -webkit-text-fill-color: {text} !important;
-    }}
-
-    /* SELECTBOX FIX (IMPORTANT) */
-    div[data-baseweb="select"] * {{
-        color: {text} !important;
-    }}
-
-    div[role="listbox"] {{
-        background-color: {card} !important;
-    }}
-
-    div[role="option"] {{
-        background-color: {card} !important;
-        color: {text} !important;
-    }}
-
-    div[role="option"]:hover {{
-        background-color: #00FFD1 !important;
-        color: black !important;
-    }}
-
-    /* BUTTON */
-    .stButton > button {{
-        background-color: #00FFD1 !important;
-        color: black !important;
-        font-weight: bold;
-        border-radius: 10px;
-        width: 100%;
-    }}
-
-    /* METRICS */
-    [data-testid="stMetricValue"] {{
-        color: #00FFD1 !important;
-        font-size: 26px;
-        font-weight: 800;
-    }}
-
-    footer {{
-        visibility: hidden;
-    }}
-
+        .stButton > button {
+            background-color: #00FFD1 !important;
+            color: black !important;
+            font-weight: bold;
+            border-radius: 10px;
+        }
     </style>
     """, unsafe_allow_html=True)
 
@@ -223,16 +143,13 @@ else:
 
     df = pd.read_sql_query("SELECT * FROM expenses", conn)
 
-    if "date" in df.columns:
-        df["date"] = pd.to_datetime(df["date"], errors="coerce")
-
     # =========================================================
     # DASHBOARD
     # =========================================================
 
     if page == "🏠 Dashboard":
 
-        st.title("💰 SmartSpend Dashboard")
+        st.title("💰 Dashboard")
 
         total = df["amount"].sum() if not df.empty else 0
         avg = df["amount"].mean() if not df.empty else 0
@@ -240,17 +157,17 @@ else:
 
         col1, col2, col3 = st.columns(3)
 
-        col1.metric("💸 Total", f"₹{total:,.2f}")
-        col2.metric("📊 Average", f"₹{avg:,.2f}")
-        col3.metric("🔥 Highest", f"₹{highest:,.2f}")
+        col1.metric("Total Spend", f"₹{total:,.2f}")
+        col2.metric("Average Spend", f"₹{avg:,.2f}")
+        col3.metric("Highest Expense", f"₹{highest:,.2f}")
 
         if not df.empty:
             cat = df.groupby("category")["amount"].sum().reset_index()
-            fig = px.pie(cat, names="category", values="amount", hole=0.5)
+            fig = px.pie(cat, names="category", values="amount")
             st.plotly_chart(fig, use_container_width=True)
 
     # =========================================================
-    # ADD EXPENSE
+    # ADD EXPENSE (FIXED UI - NO SELECTBOX ISSUES)
     # =========================================================
 
     elif page == "➕ Add Expense":
@@ -260,14 +177,19 @@ else:
         title = st.text_input("Title")
         amount = st.number_input("Amount", min_value=0.0)
 
-        category = st.selectbox(
-            "Category",
-            ["Food", "Travel", "Shopping", "Bills", "Health", "Other"]
+        # SAFE UI (NO INVISIBLE TEXT EVER)
+        st.markdown("### Category")
+        category = st.radio(
+            "",
+            ["Food", "Travel", "Shopping", "Bills", "Health", "Other"],
+            horizontal=True
         )
 
-        payment = st.selectbox(
-            "Payment Method",
-            ["Cash", "UPI", "Card"]
+        st.markdown("### Payment Method")
+        payment = st.radio(
+            "",
+            ["Cash", "UPI", "Card"],
+            horizontal=True
         )
 
         date = st.date_input("Date")
@@ -282,7 +204,7 @@ else:
             """, (title, amount, category, payment, str(date), notes))
 
             conn.commit()
-            st.success("Expense Saved ✅")
+            st.success("Expense Saved Successfully ✅")
 
     # =========================================================
     # VIEW
@@ -315,7 +237,7 @@ else:
 
         st.subheader("Savings Goal")
 
-        goal = st.number_input("Goal", min_value=1000, value=10000)
+        goal = st.number_input("Enter Goal", min_value=1000, value=10000)
 
         spent = df["amount"].sum() if not df.empty else 0
 
@@ -328,5 +250,6 @@ else:
     # =========================================================
 
     elif page == "🚪 Logout":
+
         st.session_state.logged_in = False
         st.rerun()
