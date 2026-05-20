@@ -14,10 +14,10 @@ st.set_page_config(
 )
 
 # =========================================================
-# ALWAYS CREATE FRESH DB CONNECTION (FIXES LOCK ISSUE)
+# SAFE DATABASE ENGINE (RECREATES CLEAN STATE EVERY RUN)
 # =========================================================
 
-def get_conn():
+def get_db():
     conn = sqlite3.connect("finance.db", check_same_thread=False)
     cur = conn.cursor()
 
@@ -47,7 +47,7 @@ def get_conn():
     return conn, cur
 
 # =========================================================
-# SESSION
+# SESSION STATE
 # =========================================================
 
 if "user" not in st.session_state:
@@ -57,14 +57,14 @@ if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
 # =========================================================
-# PASSWORD HASH
+# PASSWORD
 # =========================================================
 
-def hash_password(p):
+def hash_pw(p):
     return hashlib.sha256(p.encode()).hexdigest()
 
 # =========================================================
-# SAFE LOAD DATA (NEW CONNECTION EVERY TIME)
+# SAFE LOAD
 # =========================================================
 
 def load_data(user):
@@ -79,7 +79,7 @@ def load_data(user):
         return pd.DataFrame()
 
 # =========================================================
-# LOGIN / SIGNUP
+# LOGIN
 # =========================================================
 
 if not st.session_state.logged_in:
@@ -88,7 +88,7 @@ if not st.session_state.logged_in:
 
     mode = st.sidebar.radio("Choose", ["Login", "Signup"])
 
-    conn, cursor = get_conn()
+    conn, cursor = get_db()
 
     if mode == "Signup":
 
@@ -99,12 +99,12 @@ if not st.session_state.logged_in:
             try:
                 cursor.execute(
                     "INSERT INTO users (username, password) VALUES (?, ?)",
-                    (u, hash_password(p))
+                    (u, hash_pw(p))
                 )
                 conn.commit()
                 st.success("Account created")
             except:
-                st.error("User already exists")
+                st.error("User exists")
 
     else:
 
@@ -115,7 +115,7 @@ if not st.session_state.logged_in:
 
             cursor.execute(
                 "SELECT * FROM users WHERE username=? AND password=?",
-                (u, hash_password(p))
+                (u, hash_pw(p))
             )
 
             if cursor.fetchone():
@@ -126,15 +126,13 @@ if not st.session_state.logged_in:
                 st.error("Invalid login")
 
 # =========================================================
-# MAIN APP
+# APP
 # =========================================================
 
 else:
 
     user = st.session_state.user
-
-    conn, cursor = get_conn()
-
+    conn, cursor = get_db()
     df = load_data(user)
 
     st.sidebar.title("SmartSpend AI")
@@ -146,7 +144,6 @@ else:
 
     # ---------------- DASHBOARD ----------------
     if page == "Dashboard":
-
         st.title("Dashboard")
 
         income = df[df["type"] == "Income"]["amount"].sum() if not df.empty else 0
@@ -157,43 +154,40 @@ else:
         col2.metric("Expense", expense)
         col3.metric("Balance", income - expense)
 
-    # ---------------- ADD TRANSACTION ----------------
+    # ---------------- ADD ----------------
     elif page == "Add Transaction":
 
         st.subheader("Add Transaction")
 
-        ttype = st.selectbox("Type", ["Income", "Expense"])
+        t = st.selectbox("Type", ["Income", "Expense"])
         title = st.text_input("Title")
         amount = st.number_input("Amount", min_value=0.0)
 
-        category = st.selectbox("Category", ["Food", "Travel", "Other"])
-        payment = st.selectbox("Payment", ["Cash", "UPI", "Card"])
+        cat = st.selectbox("Category", ["Food", "Travel", "Other"])
+        pay = st.selectbox("Payment", ["Cash", "UPI", "Card"])
         date = st.date_input("Date")
         notes = st.text_area("Notes")
 
         if st.button("Save"):
 
             if title.strip() == "" or amount <= 0:
-                st.error("Enter valid data")
+                st.error("Invalid input")
                 st.stop()
 
             try:
-                conn, cursor = get_conn()
+                conn, cursor = get_db()
 
                 cursor.execute("""
-                    INSERT INTO expenses
-                    (username, title, amount, type, category, payment_method, date, notes)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                """, (
-                    user, title, amount, ttype,
-                    category, payment, str(date), notes
-                ))
+                INSERT INTO expenses
+                (username, title, amount, type, category, payment_method, date, notes)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """, (user, title, amount, t, cat, pay, str(date), notes))
 
                 conn.commit()
                 st.success("Saved successfully")
 
-            except Exception as e:
-                st.error("Database error — restart app")
+            except:
+                st.error("Database reset required — delete finance.db once")
 
     # ---------------- HISTORY ----------------
     elif page == "History":
