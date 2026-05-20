@@ -56,23 +56,23 @@ if "dark_mode" not in st.session_state:
     st.session_state.dark_mode = True
 
 # =========================================================
-# PASSWORD
+# PASSWORD HASH
 # =========================================================
 
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
 # =========================================================
-# LOGIN / SIGNUP
+# AUTH
 # =========================================================
 
 if not st.session_state.logged_in:
 
-    st.title("🔐 SmartSpend AI Pro")
+    st.title("💰 SmartSpend AI Pro")
 
-    menu = st.sidebar.radio("Choose Option", ["Login", "Signup"])
+    auth = st.sidebar.radio("Choose Option", ["Login", "Signup"])
 
-    if menu == "Signup":
+    if auth == "Signup":
 
         st.subheader("Create Account")
 
@@ -90,7 +90,7 @@ if not st.session_state.logged_in:
             except:
                 st.error("Username already exists")
 
-    elif menu == "Login":
+    else:
 
         st.subheader("Login")
 
@@ -98,7 +98,6 @@ if not st.session_state.logged_in:
         p = st.text_input("Password", type="password")
 
         if st.button("Login"):
-
             cursor.execute(
                 "SELECT * FROM users WHERE username=? AND password=?",
                 (u, hash_password(p))
@@ -106,7 +105,6 @@ if not st.session_state.logged_in:
 
             if cursor.fetchone():
                 st.session_state.logged_in = True
-                st.success("Login Success")
                 st.rerun()
             else:
                 st.error("Invalid credentials")
@@ -127,122 +125,130 @@ else:
 
     page = st.sidebar.radio(
         "Navigation",
-        [
-            "🏠 Dashboard",
-            "➕ Add Expense",
-            "📋 View Expenses",
-            "📈 Analytics",
-            "🎯 Savings Goals",
-            "🤖 AI Insights",
-            "🚪 Logout"
-        ]
+        ["🏠 Dashboard", "➕ Add Expense", "📋 View Expenses", "📈 Analytics", "🎯 Savings Goals", "🤖 AI Insights", "🚪 Logout"]
     )
 
-    dark_mode = st.session_state.dark_mode
+    dark = st.session_state.dark_mode
 
     # =========================================================
-    # THEME COLORS
+    # THEME
     # =========================================================
 
-    if dark_mode:
-        bg = "#0E1117"
+    if dark:
+        bg = "#0B1220"
         text = "#FFFFFF"
-        card = "#161B22"
-        input_bg = "#1E1E1E"
+        card = "#111827"
+        input_bg = "#1E293B"
         input_text = "#FFFFFF"
     else:
-        bg = "#F7F9FC"
-        text = "#000000"
+        bg = "#F5F7FB"
+        text = "#0F172A"
         card = "#FFFFFF"
         input_bg = "#FFFFFF"
-        input_text = "#000000"
+        input_text = "#0F172A"
 
     # =========================================================
-    # CSS (FIXED SELECTBOX + VISIBILITY)
+    # 🔥 FINTECH ANIMATED UI CSS (FINAL)
     # =========================================================
 
     st.markdown(f"""
     <style>
 
     .stApp {{
-        background-color: {bg};
+        background: linear-gradient(135deg, {bg}, #0f172a);
         color: {text};
     }}
 
-    html, body, p, span, label, div, h1, h2, h3 {{
+    html, body, p, span, label, div {{
         color: {text} !important;
     }}
 
+    h1, h2, h3 {{
+        color: #00FFD1 !important;
+        font-weight: 800;
+    }}
+
+    /* ================= GLASS CARDS ================= */
+
+    div[data-testid="stMetric"] {{
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+        padding: 18px;
+        border-radius: 18px;
+        backdrop-filter: blur(10px);
+        transition: 0.3s;
+    }}
+
+    div[data-testid="stMetric"]:hover {{
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0,255,209,0.2);
+    }}
+
+    [data-testid="stMetricValue"] {{
+        color: #00FFD1 !important;
+        font-weight: 800;
+        font-size: 26px;
+    }}
+
+    /* ================= SIDEBAR ================= */
+
     section[data-testid="stSidebar"] {{
-        background-color: {card};
+        background: rgba(17,24,39,0.9);
+        backdrop-filter: blur(10px);
     }}
 
     section[data-testid="stSidebar"] * {{
         color: {text} !important;
     }}
 
-    /* INPUT FIX */
+    /* ================= INPUTS ================= */
+
     input, textarea {{
-        background-color: {input_bg} !important;
+        background-color: rgba(255,255,255,0.05) !important;
         color: {input_text} !important;
-        -webkit-text-fill-color: {input_text} !important;
-        caret-color: {input_text} !important;
+        border-radius: 12px !important;
+        border: 1px solid rgba(0,255,209,0.3) !important;
     }}
 
-    /* STREAMLIT INPUT */
-    .stTextInput input,
-    .stNumberInput input {{
-        color: {input_text} !important;
+    input:focus {{
+        border: 1px solid #00FFD1 !important;
+        box-shadow: 0 0 10px rgba(0,255,209,0.3);
     }}
 
-    /* =====================================================
-       🔥 SELECTBOX FIX (THIS FIXES YOUR ISSUE)
-    ===================================================== */
-
-    div[data-baseweb="select"] {{
-        background-color: {input_bg} !important;
-        color: {input_text} !important;
-    }}
+    /* ================= SELECTBOX FIX (FINAL) ================= */
 
     div[data-baseweb="select"] * {{
         color: {input_text} !important;
     }}
 
     div[role="listbox"] {{
-        background-color: {card} !important;
+        background: {card} !important;
     }}
 
     div[role="option"] {{
-        background-color: {card} !important;
+        background: {card} !important;
         color: {text} !important;
     }}
 
     div[role="option"]:hover {{
-        background-color: #00FFD1 !important;
+        background: #00FFD1 !important;
         color: black !important;
     }}
 
-    /* BUTTON */
+    /* ================= BUTTON ================= */
+
     .stButton > button {{
-        background-color: #00FFD1 !important;
-        color: black !important;
-        font-weight: bold;
-        border-radius: 10px;
+        background: linear-gradient(90deg, #00FFD1, #00C9A7);
+        color: black;
+        font-weight: 700;
+        border-radius: 12px;
         width: 100%;
+        transition: 0.3s;
     }}
 
     .stButton > button:hover {{
-        background-color: #00c9a7 !important;
-        color: black !important;
-    }}
-
-    /* METRICS */
-    [data-testid="stMetricValue"] {{
-        color: #00FFD1 !important;
-    }}
-
-    footer {{
-        visibility: hidden;
+        transform: scale(1.03);
+        box-shadow: 0 10px 20px rgba(0,255,209,0.3);
     }}
 
     </style>
@@ -258,19 +264,41 @@ else:
         df["date"] = pd.to_datetime(df["date"], errors="coerce")
 
     # =========================================================
-    # DASHBOARD
+    # DASHBOARD (PHONEPE STYLE)
     # =========================================================
 
     if page == "🏠 Dashboard":
 
-        st.subheader("Dashboard")
+        st.markdown("## 💰 SmartSpend Dashboard")
 
         total = df["amount"].sum() if not df.empty else 0
+        avg = df["amount"].mean() if not df.empty else 0
+        highest = df["amount"].max() if not df.empty else 0
 
-        st.metric("Total Expenses", f"₹{total:.2f}")
+        col1, col2, col3 = st.columns(3)
+
+        col1.metric("💸 Total Spend", f"₹{total:,.2f}")
+        col2.metric("📊 Average Spend", f"₹{avg:,.2f}")
+        col3.metric("🔥 Highest Expense", f"₹{highest:,.2f}")
+
+        st.markdown("---")
+
+        if not df.empty:
+
+            cat = df.groupby("category")["amount"].sum().reset_index()
+
+            c1, c2 = st.columns(2)
+
+            with c1:
+                fig1 = px.pie(cat, names="category", values="amount", hole=0.55)
+                st.plotly_chart(fig1, use_container_width=True)
+
+            with c2:
+                fig2 = px.bar(cat, x="category", y="amount")
+                st.plotly_chart(fig2, use_container_width=True)
 
     # =========================================================
-    # ADD EXPENSE (FIXED CATEGORY VISIBILITY HERE)
+    # ADD EXPENSE
     # =========================================================
 
     elif page == "➕ Add Expense":
@@ -287,14 +315,13 @@ else:
 
         payment = st.selectbox(
             "Payment Method",
-            ["Cash", "UPI", "Card"]
+            ["Cash", "UPI", "Debit Card", "Credit Card"]
         )
 
         date = st.date_input("Date")
         notes = st.text_area("Notes")
 
         if st.button("Save Expense"):
-
             cursor.execute("""
                 INSERT INTO expenses
                 (title, amount, category, payment_method, date, notes)
@@ -323,11 +350,8 @@ else:
         st.subheader("Analytics")
 
         if not df.empty:
-
             cat = df.groupby("category")["amount"].sum().reset_index()
-
             fig = px.pie(cat, names="category", values="amount")
-
             st.plotly_chart(fig, use_container_width=True)
 
     # =========================================================
@@ -355,9 +379,7 @@ else:
         st.subheader("Insights")
 
         if not df.empty:
-
             top = df.groupby("category")["amount"].sum().idxmax()
-
             st.success(f"Top Category: {top}")
 
     # =========================================================
