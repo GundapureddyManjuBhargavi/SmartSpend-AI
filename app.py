@@ -3,7 +3,6 @@ import pandas as pd
 import sqlite3
 import plotly.express as px
 import plotly.graph_objects as go
-from datetime import datetime
 import hashlib
 
 # =========================================================
@@ -73,7 +72,7 @@ if not st.session_state.logged_in:
 
     auth_menu = st.sidebar.radio("Choose Option", ["Login", "Signup"])
 
-    # ---------------- SIGNUP ----------------
+    # SIGNUP
     if auth_menu == "Signup":
 
         st.subheader("📝 Create Account")
@@ -98,7 +97,7 @@ if not st.session_state.logged_in:
                 except:
                     st.error("Username already exists.")
 
-    # ---------------- LOGIN ----------------
+    # LOGIN
     elif auth_menu == "Login":
 
         st.subheader("🔑 Login")
@@ -128,7 +127,7 @@ if not st.session_state.logged_in:
 
 else:
 
-    # ---------------- SIDEBAR ----------------
+    # SIDEBAR
     st.sidebar.title("💡 SmartSpend AI Pro")
 
     st.session_state.dark_mode = st.sidebar.toggle(
@@ -151,9 +150,9 @@ else:
 
     dark_mode = st.session_state.dark_mode
 
-    # =====================================================
-    # THEME
-    # =====================================================
+    # =========================================================
+    # THEME COLORS
+    # =========================================================
 
     if dark_mode:
         bg_color = "#0E1117"
@@ -161,20 +160,16 @@ else:
         card_bg = "#161B22"
         input_bg = "#1E1E1E"
         input_text = "#FFFFFF"
-        dropdown_bg = "#1E1E1E"
-        dropdown_text = "#FFFFFF"
     else:
         bg_color = "#F7F9FC"
         text_color = "#000000"
         card_bg = "#FFFFFF"
         input_bg = "#FFFFFF"
         input_text = "#000000"
-        dropdown_bg = "#FFFFFF"
-        dropdown_text = "#000000"
 
-    # =====================================================
-    # CSS
-    # =====================================================
+    # =========================================================
+    # FIXED CSS (VISIBLE TEXT + PRO UI)
+    # =========================================================
 
     st.markdown(f"""
     <style>
@@ -184,13 +179,8 @@ else:
         color: {text_color};
     }}
 
-    html, body, p, span, label, div {{
+    html, body, p, span, label, div, h1, h2, h3, h4, h5 {{
         color: {text_color} !important;
-    }}
-
-    h1, h2, h3 {{
-        color: #00FFD1 !important;
-        font-weight: bold;
     }}
 
     section[data-testid="stSidebar"] {{
@@ -201,35 +191,47 @@ else:
         color: {text_color} !important;
     }}
 
-    .stTextInput input,
-    .stNumberInput input,
-    textarea {{
+    /* INPUT FIX */
+    input, textarea {{
         background-color: {input_bg} !important;
         color: {input_text} !important;
         -webkit-text-fill-color: {input_text} !important;
         caret-color: {input_text} !important;
-        border-radius: 10px !important;
-        border: 2px solid #00FFD1 !important;
     }}
 
+    /* STREAMLIT INPUT */
+    .stTextInput input,
+    .stNumberInput input {{
+        color: {input_text} !important;
+    }}
+
+    /* SELECTBOX FIX */
+    div[data-baseweb="select"] * {{
+        color: {input_text} !important;
+    }}
+
+    /* BUTTON */
     .stButton > button {{
         background-color: #00FFD1 !important;
         color: black !important;
-        border-radius: 10px !important;
-        font-weight: bold !important;
+        font-weight: bold;
+        border-radius: 10px;
         width: 100%;
-        height: 3em;
     }}
 
     .stButton > button:hover {{
         background-color: #00c9a7 !important;
-        color: {input_text} !important;
+        color: black !important;
     }}
 
+    /* METRICS */
     [data-testid="stMetricValue"] {{
         color: #00FFD1 !important;
-        font-size: 28px;
-        font-weight: bold;
+    }}
+
+    /* DATAFRAME */
+    .stDataFrame {{
+        color: {text_color} !important;
     }}
 
     footer {{
@@ -239,22 +241,22 @@ else:
     </style>
     """, unsafe_allow_html=True)
 
-    # =====================================================
+    # =========================================================
     # LOAD DATA
-    # =====================================================
+    # =========================================================
 
     df = pd.read_sql_query("SELECT * FROM expenses", conn)
 
     if "date" in df.columns:
         df["date"] = pd.to_datetime(df["date"], errors="coerce")
 
-    # =====================================================
+    # =========================================================
     # DASHBOARD
-    # =====================================================
+    # =========================================================
 
     if menu == "🏠 Dashboard":
 
-        st.subheader("📊 Financial Dashboard")
+        st.subheader("📊 Dashboard")
 
         total = df["amount"].sum() if not df.empty else 0
         avg = df["amount"].mean() if not df.empty else 0
@@ -267,15 +269,13 @@ else:
         col3.metric("🔥 Highest", f"₹{highest:.2f}")
 
         if not df.empty:
-
             cat = df.groupby("category")["amount"].sum().reset_index()
+            fig = px.pie(cat, names="category", values="amount")
+            st.plotly_chart(fig, use_container_width=True)
 
-            fig1 = px.pie(cat, names="category", values="amount", hole=0.5)
-            st.plotly_chart(fig1, use_container_width=True)
-
-    # =====================================================
+    # =========================================================
     # ADD EXPENSE
-    # =====================================================
+    # =========================================================
 
     elif menu == "➕ Add Expense":
 
@@ -302,11 +302,10 @@ else:
 
             conn.commit()
             st.success("Saved ✅")
-            st.balloons()
 
-    # =====================================================
+    # =========================================================
     # VIEW
-    # =====================================================
+    # =========================================================
 
     elif menu == "📋 View Expenses":
 
@@ -324,9 +323,9 @@ else:
             "expenses.csv"
         )
 
-    # =====================================================
+    # =========================================================
     # ANALYTICS
-    # =====================================================
+    # =========================================================
 
     elif menu == "📈 Analytics":
 
@@ -337,17 +336,21 @@ else:
             monthly = df.groupby(df["date"].dt.strftime("%Y-%m"))["amount"].sum().reset_index()
 
             fig = go.Figure()
-            fig.add_trace(go.Scatter(x=monthly["date"], y=monthly["amount"], mode="lines+markers"))
+            fig.add_trace(go.Scatter(
+                x=monthly["date"],
+                y=monthly["amount"],
+                mode="lines+markers"
+            ))
 
             st.plotly_chart(fig, use_container_width=True)
 
-    # =====================================================
+    # =========================================================
     # SAVINGS
-    # =====================================================
+    # =========================================================
 
     elif menu == "🎯 Savings Goals":
 
-        st.subheader("🎯 Goals")
+        st.subheader("🎯 Savings")
 
         goal = st.number_input("Goal", min_value=1000, value=10000)
 
@@ -357,9 +360,9 @@ else:
 
         st.metric("Remaining", f"₹{goal - spent:.2f}")
 
-    # =====================================================
+    # =========================================================
     # AI INSIGHTS
-    # =====================================================
+    # =========================================================
 
     elif menu == "🤖 AI Insights":
 
@@ -369,13 +372,12 @@ else:
 
             top = df.groupby("category")["amount"].sum().idxmax()
 
-            st.success(f"Top spending: {top}")
+            st.success(f"Top category: {top}")
             st.info("Save 20% monthly 💡")
-            st.info("Avoid unnecessary shopping 🛍️")
 
-    # =====================================================
+    # =========================================================
     # LOGOUT
-    # =====================================================
+    # =========================================================
 
     elif menu == "🚪 Logout":
         st.session_state.logged_in = False
