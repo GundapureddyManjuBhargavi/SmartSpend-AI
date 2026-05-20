@@ -3,7 +3,6 @@ import pandas as pd
 import sqlite3
 import plotly.express as px
 import hashlib
-import time
 
 # =========================================================
 # CONFIG
@@ -16,7 +15,7 @@ st.set_page_config(
 )
 
 # =========================================================
-# DB
+# DATABASE
 # =========================================================
 
 conn = sqlite3.connect("finance.db", check_same_thread=False)
@@ -51,9 +50,6 @@ conn.commit()
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
-if "user" not in st.session_state:
-    st.session_state.user = ""
-
 # =========================================================
 # HASH
 # =========================================================
@@ -62,19 +58,16 @@ def hash_password(p):
     return hashlib.sha256(p.encode()).hexdigest()
 
 # =========================================================
-# LOGIN / SIGNUP PAGE
+# AUTH
 # =========================================================
 
 if not st.session_state.logged_in:
 
     st.title("💰 SmartSpend AI Pro")
 
-    menu = st.sidebar.radio("Auth", ["Login", "Signup"])
+    mode = st.sidebar.radio("Choose", ["Login", "Signup"])
 
-    # ---------------- SIGNUP ----------------
-    if menu == "Signup":
-
-        st.subheader("Create Account")
+    if mode == "Signup":
 
         u = st.text_input("Username")
         p = st.text_input("Password", type="password")
@@ -86,14 +79,11 @@ if not st.session_state.logged_in:
                     (u, hash_password(p))
                 )
                 conn.commit()
-                st.success("Account created ✅")
+                st.success("Account Created")
             except:
-                st.error("User already exists")
+                st.error("User exists")
 
-    # ---------------- LOGIN ----------------
     else:
-
-        st.subheader("Login")
 
         u = st.text_input("Username")
         p = st.text_input("Password", type="password")
@@ -107,10 +97,9 @@ if not st.session_state.logged_in:
 
             if cursor.fetchone():
                 st.session_state.logged_in = True
-                st.session_state.user = u
                 st.rerun()
             else:
-                st.error("Invalid credentials")
+                st.error("Invalid login")
 
 # =========================================================
 # MAIN APP
@@ -118,118 +107,105 @@ if not st.session_state.logged_in:
 
 else:
 
-    # =========================================================
-    # LOAD DATA
-    # =========================================================
-
-    df = pd.read_sql_query("SELECT * FROM expenses", conn)
-
-    # =========================================================
-    # RAZORPAY STYLE UI
-    # =========================================================
-
+    # 🔥 SAFE THEME (NO VISIBILITY ISSUES)
     st.markdown("""
     <style>
 
+    /* APP BACKGROUND (NOT PURE BLACK → avoids invisibility) */
     .stApp {
-        background: radial-gradient(circle at top, #0f172a, #020617);
-        color: white;
+        background-color: #0B1220;
+        color: #E5E7EB;
     }
 
+    /* HEADINGS */
     h1, h2, h3 {
         color: #00FFD1 !important;
-        font-weight: 800;
     }
 
-    /* METRIC CARDS */
-    div[data-testid="stMetric"] {
-        background: rgba(255,255,255,0.06);
-        border: 1px solid rgba(255,255,255,0.08);
-        padding: 18px;
-        border-radius: 16px;
-        backdrop-filter: blur(10px);
-        transition: 0.3s;
+    /* INPUTS SAFE */
+    input, textarea {
+        background-color: #111827 !important;
+        color: #E5E7EB !important;
     }
 
-    div[data-testid="stMetric"]:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 25px rgba(0,255,209,0.15);
+    /* SELECTBOX SAFE */
+    div[data-baseweb="select"] {
+        background-color: #111827 !important;
     }
 
-    [data-testid="stMetricValue"] {
-        color: #00FFD1 !important;
-        font-size: 26px;
-        font-weight: 800;
+    div[data-baseweb="select"] * {
+        color: #E5E7EB !important;
+    }
+
+    /* DROPDOWN */
+    div[role="option"] {
+        background-color: #111827 !important;
+        color: #E5E7EB !important;
+    }
+
+    div[role="option"]:hover {
+        background-color: #00FFD1 !important;
+        color: black !important;
     }
 
     /* BUTTON */
     .stButton > button {
-        background: linear-gradient(90deg, #00FFD1, #00C2FF);
-        color: black;
+        background-color: #00FFD1 !important;
+        color: black !important;
         font-weight: 700;
-        border-radius: 12px;
-        width: 100%;
+        border-radius: 10px;
     }
 
-    /* SIDEBAR */
-    section[data-testid="stSidebar"] {
-        background: rgba(2,6,23,0.9);
+    /* METRICS */
+    [data-testid="stMetricValue"] {
+        color: #00FFD1 !important;
+        font-size: 24px;
+        font-weight: 800;
     }
 
     </style>
     """, unsafe_allow_html=True)
 
     # =========================================================
-    # SIDEBAR NAVIGATION
+    # DATA
     # =========================================================
 
-    st.sidebar.title("💡 SmartSpend Pro")
+    df = pd.read_sql_query("SELECT * FROM expenses", conn)
+
+    # =========================================================
+    # SIDEBAR
+    # =========================================================
+
+    st.sidebar.title("💡 SmartSpend")
 
     page = st.sidebar.radio(
         "Navigation",
-        ["🏠 Dashboard", "➕ Add Expense", "📊 Analytics", "📋 View Expenses", "🎯 Savings Goals", "🚪 Logout"]
+        ["🏠 Dashboard", "➕ Add Expense", "📊 Analytics", "📋 View", "🚪 Logout"]
     )
 
-    st.sidebar.write(f"👤 Logged in as: **{st.session_state.user}**")
-
     # =========================================================
-    # DASHBOARD (RAZORPAY STYLE)
+    # DASHBOARD
     # =========================================================
 
     if page == "🏠 Dashboard":
 
-        st.markdown("## 💰 Financial Dashboard")
+        st.title("💰 Dashboard")
 
         total = df["amount"].sum() if not df.empty else 0
-        avg = df["amount"].mean() if not df.empty else 0
-        highest = df["amount"].max() if not df.empty else 0
 
         col1, col2, col3 = st.columns(3)
 
-        col1.metric("💸 Total Spend", f"₹{total:,.2f}")
-        col2.metric("📊 Average Spend", f"₹{avg:,.2f}")
-        col3.metric("🔥 Highest Expense", f"₹{highest:,.2f}")
-
-        st.markdown("---")
+        col1.metric("Total", f"₹{total:,.2f}")
+        col2.metric("Records", len(df))
+        col3.metric("Avg", f"₹{df['amount'].mean() if not df.empty else 0:,.2f}")
 
         if not df.empty:
-
             cat = df.groupby("category")["amount"].sum().reset_index()
-
-            c1, c2 = st.columns(2)
-
-            with c1:
-                st.markdown("### Category Split")
-                fig = px.pie(cat, names="category", values="amount", hole=0.6)
-                st.plotly_chart(fig, use_container_width=True)
-
-            with c2:
-                st.markdown("### Spending")
-                fig2 = px.bar(cat, x="category", y="amount", color="category")
-                st.plotly_chart(fig2, use_container_width=True)
+            fig = px.pie(cat, names="category", values="amount")
+            st.plotly_chart(fig, use_container_width=True)
 
     # =========================================================
-    # ADD EXPENSE
+    # ADD EXPENSE (FIXED VISIBILITY)
     # =========================================================
 
     elif page == "➕ Add Expense":
@@ -239,6 +215,7 @@ else:
         title = st.text_input("Title")
         amount = st.number_input("Amount", min_value=0.0)
 
+        # 🔥 SAFE VISUAL SELECT (NO INVISIBLE TEXT EVER)
         category = st.selectbox(
             "Category",
             ["Food", "Travel", "Shopping", "Bills", "Health", "Other"]
@@ -261,15 +238,13 @@ else:
             """, (title, amount, category, payment, str(date), notes))
 
             conn.commit()
-            st.success("Saved Successfully ✅")
+            st.success("Saved Successfully")
 
     # =========================================================
     # VIEW
     # =========================================================
 
-    elif page == "📋 View Expenses":
-
-        st.subheader("All Expenses")
+    elif page == "📋 View":
 
         st.dataframe(df, use_container_width=True)
 
@@ -279,35 +254,15 @@ else:
 
     elif page == "📊 Analytics":
 
-        st.subheader("Analytics")
-
         if not df.empty:
             cat = df.groupby("category")["amount"].sum().reset_index()
             fig = px.bar(cat, x="category", y="amount", color="category")
             st.plotly_chart(fig, use_container_width=True)
 
     # =========================================================
-    # SAVINGS
-    # =========================================================
-
-    elif page == "🎯 Savings Goals":
-
-        st.subheader("Savings Goal")
-
-        goal = st.number_input("Goal", min_value=1000, value=10000)
-
-        spent = df["amount"].sum() if not df.empty else 0
-
-        st.progress(min(spent / goal, 1.0))
-
-        st.metric("Remaining", f"₹{goal - spent:,.2f}")
-
-    # =========================================================
     # LOGOUT
     # =========================================================
 
     elif page == "🚪 Logout":
-
         st.session_state.logged_in = False
-        st.session_state.user = ""
         st.rerun()
