@@ -65,7 +65,7 @@ if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
 # =========================================================
-# PASSWORD HASH
+# PASSWORD HASH FUNCTION
 # =========================================================
 
 def hash_password(password):
@@ -75,7 +75,7 @@ def hash_password(password):
     ).hexdigest()
 
 # =========================================================
-# LOGIN / SIGNUP PAGE
+# LOGIN / SIGNUP
 # =========================================================
 
 if not st.session_state.logged_in:
@@ -192,7 +192,7 @@ if not st.session_state.logged_in:
                 )
 
 # =========================================================
-# MAIN APPLICATION
+# MAIN APP
 # =========================================================
 
 else:
@@ -240,20 +240,16 @@ else:
         input_bg = "#FFFFFF"
 
     # =====================================================
-    # PROFESSIONAL CSS
+    # PERFECT PROFESSIONAL CSS
     # =====================================================
 
     st.markdown(f"""
     <style>
 
-    /* MAIN APP */
-
     .stApp {{
         background-color: {bg_color};
         color: {text_color};
     }}
-
-    /* GLOBAL TEXT */
 
     html,
     body,
@@ -264,14 +260,10 @@ else:
         color: {text_color} !important;
     }}
 
-    /* HEADINGS */
-
     h1, h2, h3, h4 {{
         color: #00FFD1 !important;
         font-weight: bold;
     }}
-
-    /* SIDEBAR */
 
     section[data-testid="stSidebar"] {{
         background-color: {card_bg};
@@ -287,32 +279,32 @@ else:
     .stNumberInput input,
     textarea {{
 
-        background-color: {input_bg} !important;
+        background-color: #1E1E1E !important;
 
-        color: {text_color} !important;
+        color: white !important;
 
-        -webkit-text-fill-color: {text_color} !important;
+        -webkit-text-fill-color: white !important;
 
-        caret-color: {text_color} !important;
+        caret-color: white !important;
 
         border-radius: 10px !important;
 
         border: 2px solid #00FFD1 !important;
     }}
 
-    /* DATE INPUT FIX */
+    /* DATE INPUT */
 
     .stDateInput input {{
 
-        background-color: {input_bg} !important;
+        background-color: #1E1E1E !important;
 
         color: white !important;
 
         -webkit-text-fill-color: white !important;
 
-        border-radius: 10px !important;
-
         border: 2px solid #00FFD1 !important;
+
+        border-radius: 10px !important;
     }}
 
     .stDateInput div {{
@@ -323,24 +315,50 @@ else:
         fill: white !important;
     }}
 
-    /* SELECT BOX */
+    /* SELECT BOX FIX */
 
     div[data-baseweb="select"] > div {{
 
-        background-color: {input_bg} !important;
+        background-color: #1E1E1E !important;
 
-        color: {text_color} !important;
-
-        border-radius: 10px !important;
+        color: white !important;
 
         border: 2px solid #00FFD1 !important;
+
+        border-radius: 10px !important;
     }}
 
-    div[data-baseweb="select"] * {{
-        color: {text_color} !important;
+    /* SELECTED TEXT */
+
+    div[data-baseweb="select"] span {{
+        color: white !important;
     }}
 
-    /* BUTTONS */
+    /* DROPDOWN MENU */
+
+    ul {{
+        background-color: #1E1E1E !important;
+    }}
+
+    /* DROPDOWN OPTIONS */
+
+    li {{
+
+        background-color: #1E1E1E !important;
+
+        color: white !important;
+    }}
+
+    /* HOVER OPTION */
+
+    li:hover {{
+
+        background-color: #00FFD1 !important;
+
+        color: black !important;
+    }}
+
+    /* BUTTON */
 
     .stButton > button {{
 
@@ -350,9 +368,9 @@ else:
 
         border-radius: 10px !important;
 
-        border: none !important;
-
         font-weight: bold !important;
+
+        border: none !important;
 
         height: 3em;
 
@@ -391,7 +409,9 @@ else:
 
     center {{
         color: {text_color} !important;
+
         font-size: 16px;
+
         font-weight: bold;
     }}
 
