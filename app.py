@@ -5,17 +5,18 @@ import plotly.express as px
 import hashlib
 
 # =========================================================
-# CONFIG
+# CONFIG (FORCES SAFE LIGHT UI BASE)
 # =========================================================
 
 st.set_page_config(
     page_title="SmartSpend AI Pro",
     page_icon="💰",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
 # =========================================================
-# DB SETUP
+# DB
 # =========================================================
 
 conn = sqlite3.connect("finance.db", check_same_thread=False)
@@ -55,22 +56,18 @@ if "logged_in" not in st.session_state:
 if "user" not in st.session_state:
     st.session_state.user = ""
 
-# =========================================================
-# PASSWORD HASH
-# =========================================================
-
 def hash_password(p):
     return hashlib.sha256(p.encode()).hexdigest()
 
 # =========================================================
-# LOGIN / SIGNUP
+# AUTH
 # =========================================================
 
 if not st.session_state.logged_in:
 
     st.title("💰 SmartSpend AI Pro")
 
-    mode = st.sidebar.radio("Auth", ["Login", "Signup"])
+    mode = st.sidebar.radio("Choose", ["Login", "Signup"])
 
     if mode == "Signup":
 
@@ -84,7 +81,7 @@ if not st.session_state.logged_in:
                     (u, hash_password(p))
                 )
                 conn.commit()
-                st.success("Account created ✅")
+                st.success("Account created")
             except:
                 st.error("User already exists")
 
@@ -105,7 +102,7 @@ if not st.session_state.logged_in:
                 st.session_state.user = u
                 st.rerun()
             else:
-                st.error("Invalid credentials")
+                st.error("Invalid login")
 
 # =========================================================
 # MAIN APP
@@ -116,15 +113,20 @@ else:
     user = st.session_state.user
 
     # =========================================================
-    # SAFE FINTECH LIGHT THEME (NO VISIBILITY ISSUES)
+    # SAFE MINIMAL UI (NO BLACK TEXT BUG EVER)
     # =========================================================
 
     st.markdown("""
     <style>
 
-    /* LIGHT BACKGROUND (BEST READABILITY) */
+    /* SAFE LIGHT BACKGROUND */
     .stApp {
-        background: #f5f7fb !important;
+        background-color: #f8fafc !important;
+        color: #0f172a !important;
+    }
+
+    /* FORCE TEXT VISIBILITY */
+    html, body, p, span, label, div {
         color: #0f172a !important;
     }
 
@@ -134,42 +136,25 @@ else:
         font-weight: 800;
     }
 
-    /* TEXT */
-    p, span, label, div {
-        color: #0f172a !important;
-    }
-
-    /* SIDEBAR */
+    /* SIDEBAR FIX */
     section[data-testid="stSidebar"] {
         background-color: #0f172a !important;
-        color: white !important;
     }
 
     section[data-testid="stSidebar"] * {
         color: white !important;
     }
 
-    /* INPUTS */
+    /* INPUTS SAFE */
     input, textarea {
         background-color: white !important;
         color: #0f172a !important;
         border: 1px solid #cbd5e1 !important;
     }
 
-    /* SELECTBOX (SAFE) */
-    div[data-baseweb="select"] {
-        background-color: white !important;
+    /* SELECTBOX SAFE */
+    div[data-baseweb="select"] * {
         color: #0f172a !important;
-    }
-
-    div[role="option"] {
-        background-color: white !important;
-        color: #0f172a !important;
-    }
-
-    div[role="option"]:hover {
-        background-color: #0ea5e9 !important;
-        color: white !important;
     }
 
     /* BUTTON */
@@ -192,7 +177,7 @@ else:
     """, unsafe_allow_html=True)
 
     # =========================================================
-    # LOAD DATA
+    # DATA
     # =========================================================
 
     df = pd.read_sql_query(
@@ -202,44 +187,38 @@ else:
     )
 
     # =========================================================
-    # SIDEBAR
+    # NAV
     # =========================================================
 
-    st.sidebar.title(f"💡 {user}")
+    st.sidebar.title("SmartSpend")
 
     page = st.sidebar.radio(
-        "Navigation",
-        ["🏠 Dashboard", "➕ Add Expense", "📊 Analytics", "📋 History", "🎯 Savings", "🚪 Logout"]
+        "Menu",
+        ["Dashboard", "Add Expense", "Analytics", "History", "Logout"]
     )
 
     # =========================================================
     # DASHBOARD
     # =========================================================
 
-    if page == "🏠 Dashboard":
+    if page == "Dashboard":
 
-        st.title("💰 Financial Dashboard")
+        st.title("Financial Dashboard")
 
         income = df[df["type"] == "Income"]["amount"].sum() if not df.empty else 0
         expense = df[df["type"] == "Expense"]["amount"].sum() if not df.empty else 0
-        balance = income - expense
 
         col1, col2, col3 = st.columns(3)
 
-        col1.metric("Income", f"₹{income:,.2f}")
-        col2.metric("Expense", f"₹{expense:,.2f}")
-        col3.metric("Balance", f"₹{balance:,.2f}")
-
-        if not df.empty:
-            cat = df.groupby("category")["amount"].sum().reset_index()
-            fig = px.pie(cat, names="category", values="amount", hole=0.5)
-            st.plotly_chart(fig, use_container_width=True)
+        col1.metric("Income", f"₹{income}")
+        col2.metric("Expense", f"₹{expense}")
+        col3.metric("Balance", f"₹{income-expense}")
 
     # =========================================================
-    # ADD EXPENSE
+    # ADD
     # =========================================================
 
-    elif page == "➕ Add Expense":
+    elif page == "Add Expense":
 
         st.subheader("Add Transaction")
 
@@ -247,16 +226,8 @@ else:
         title = st.text_input("Title")
         amount = st.number_input("Amount", min_value=0.0)
 
-        category = st.selectbox(
-            "Category",
-            ["Food", "Travel", "Shopping", "Bills", "Salary", "Other"]
-        )
-
-        payment = st.selectbox(
-            "Payment Method",
-            ["Cash", "UPI", "Card"]
-        )
-
+        category = st.selectbox("Category", ["Food", "Travel", "Shopping", "Bills", "Other"])
+        payment = st.selectbox("Payment Method", ["Cash", "UPI", "Card"])
         date = st.date_input("Date")
         notes = st.text_area("Notes")
 
@@ -269,46 +240,30 @@ else:
             """, (user, title, amount, ttype, category, payment, str(date), notes))
 
             conn.commit()
-            st.success("Saved Successfully ✅")
+            st.success("Saved")
 
     # =========================================================
     # HISTORY
     # =========================================================
 
-    elif page == "📋 History":
-
+    elif page == "History":
         st.dataframe(df, use_container_width=True)
 
     # =========================================================
     # ANALYTICS
     # =========================================================
 
-    elif page == "📊 Analytics":
+    elif page == "Analytics":
 
         if not df.empty:
             cat = df.groupby("category")["amount"].sum().reset_index()
-            fig = px.bar(cat, x="category", y="amount", color="category")
-            st.plotly_chart(fig, use_container_width=True)
-
-    # =========================================================
-    # SAVINGS
-    # =========================================================
-
-    elif page == "🎯 Savings":
-
-        goal = st.number_input("Goal", min_value=1000, value=10000)
-
-        spent = df["amount"].sum() if not df.empty else 0
-
-        st.progress(min(spent / goal, 1.0))
-
-        st.metric("Remaining", f"₹{goal - spent:,.2f}")
+            st.plotly_chart(px.bar(cat, x="category", y="amount"))
 
     # =========================================================
     # LOGOUT
     # =========================================================
 
-    elif page == "🚪 Logout":
+    elif page == "Logout":
         st.session_state.logged_in = False
         st.session_state.user = ""
         st.rerun()
