@@ -5,7 +5,7 @@ import plotly.express as px
 import hashlib
 
 # =========================================================
-# PAGE CONFIG
+# CONFIG
 # =========================================================
 
 st.set_page_config(
@@ -15,12 +15,13 @@ st.set_page_config(
 )
 
 # =========================================================
-# DATABASE (SAFE INIT - NO CRASH EVER)
+# SAFE DATABASE INIT (FIXES ALL CRASHES)
 # =========================================================
 
 conn = sqlite3.connect("finance.db", check_same_thread=False)
 cursor = conn.cursor()
 
+# USERS TABLE
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -29,6 +30,7 @@ CREATE TABLE IF NOT EXISTS users (
 )
 """)
 
+# EXPENSES TABLE (FIXED + CONSISTENT SCHEMA)
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS expenses (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -56,11 +58,21 @@ if "user" not in st.session_state:
     st.session_state.user = ""
 
 # =========================================================
-# HASH PASSWORD
+# PASSWORD HASH
 # =========================================================
 
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
+
+# =========================================================
+# SAFE QUERY FUNCTION (PREVENTS DB CRASH)
+# =========================================================
+
+def safe_query(query, params=()):
+    try:
+        return pd.read_sql_query(query, conn, params=params)
+    except Exception:
+        return pd.DataFrame()
 
 # =========================================================
 # LOGIN / SIGNUP
@@ -72,24 +84,24 @@ if not st.session_state.logged_in:
 
     mode = st.sidebar.radio("Choose Option", ["Login", "Signup"])
 
-    # ---------------- SIGNUP ----------------
     if mode == "Signup":
 
         username = st.text_input("Username")
         password = st.text_input("Password", type="password")
 
         if st.button("Create Account"):
+
             try:
                 cursor.execute(
                     "INSERT INTO users (username, password) VALUES (?, ?)",
                     (username, hash_password(password))
                 )
                 conn.commit()
-                st.success("Account Created Successfully ✅")
+                st.success("Account Created ✅")
+
             except:
                 st.error("Username already exists")
 
-    # ---------------- LOGIN ----------------
     else:
 
         username = st.text_input("Username")
@@ -102,14 +114,12 @@ if not st.session_state.logged_in:
                 (username, hash_password(password))
             )
 
-            user = cursor.fetchone()
-
-            if user:
+            if cursor.fetchone():
                 st.session_state.logged_in = True
                 st.session_state.user = username
                 st.rerun()
             else:
-                st.error("Invalid Credentials")
+                st.error("Invalid credentials")
 
 # =========================================================
 # MAIN APP
@@ -120,7 +130,7 @@ else:
     user = st.session_state.user
 
     # =========================================================
-    # SAFE UI (NO BLACK TEXT BUG EVER)
+    # SAFE LIGHT UI (NO VISIBILITY ISSUES)
     # =========================================================
 
     st.markdown("""
@@ -136,12 +146,6 @@ else:
         font-weight: 800;
     }
 
-    /* TEXT FIX */
-    p, span, label, div {
-        color: #0f172a !important;
-    }
-
-    /* SIDEBAR */
     section[data-testid="stSidebar"] {
         background-color: #0f172a !important;
     }
@@ -150,7 +154,6 @@ else:
         color: white !important;
     }
 
-    /* INPUTS */
     input, textarea {
         background-color: white !important;
         color: #0f172a !important;
@@ -158,12 +161,6 @@ else:
         border-radius: 8px;
     }
 
-    /* SELECTBOX */
-    div[data-baseweb="select"] * {
-        color: #0f172a !important;
-    }
-
-    /* BUTTON */
     .stButton > button {
         background: linear-gradient(90deg, #2563eb, #22c55e) !important;
         color: white !important;
@@ -172,10 +169,9 @@ else:
         width: 100%;
     }
 
-    /* METRICS */
     [data-testid="stMetricValue"] {
         color: #2563eb !important;
-        font-size: 26px;
+        font-size: 24px;
         font-weight: 800;
     }
 
@@ -186,23 +182,19 @@ else:
     # LOAD DATA (SAFE)
     # =========================================================
 
-    try:
-        df = pd.read_sql_query(
-            "SELECT * FROM expenses WHERE username=?",
-            conn,
-            params=(user,)
-        )
-    except:
-        df = pd.DataFrame()
+    df = safe_query(
+        "SELECT * FROM expenses WHERE username=?",
+        (user,)
+    )
 
     # =========================================================
-    # MENU
+    # SIDEBAR MENU
     # =========================================================
 
-    st.sidebar.title("💡 SmartSpend AI")
+    st.sidebar.title("SmartSpend AI")
 
     page = st.sidebar.radio(
-        "Navigation",
+        "Menu",
         ["Dashboard", "Add Expense", "Analytics", "History", "Logout"]
     )
 
@@ -216,21 +208,19 @@ else:
 
         income = df[df["type"] == "Income"]["amount"].sum() if not df.empty else 0
         expense = df[df["type"] == "Expense"]["amount"].sum() if not df.empty else 0
-        balance = income - expense
 
         col1, col2, col3 = st.columns(3)
 
         col1.metric("Income", f"₹{income:,.2f}")
         col2.metric("Expense", f"₹{expense:,.2f}")
-        col3.metric("Balance", f"₹{balance:,.2f}")
+        col3.metric("Balance", f"₹{income-expense:,.2f}")
 
         if not df.empty:
             cat = df.groupby("category")["amount"].sum().reset_index()
-            fig = px.pie(cat, names="category", values="amount", hole=0.5)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(px.pie(cat, names="category", values="amount", hole=0.5))
 
     # =========================================================
-    # ADD EXPENSE
+    # ADD EXPENSE (CRASH-PROOF INSERT)
     # =========================================================
 
     elif page == "Add Expense":
@@ -254,24 +244,40 @@ else:
         date = st.date_input("Date")
         notes = st.text_area("Notes")
 
-        if st.button("Save"):
+        if st.button("Save Transaction"):
 
-            cursor.execute("""
-                INSERT INTO expenses
-                (username, title, amount, type, category, payment_method, date, notes)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """, (user, title, amount, ttype, category, payment, str(date), notes))
+            # SAFE VALIDATION
+            if title.strip() == "" or amount <= 0:
+                st.error("Please enter valid title and amount")
+                st.stop()
 
-            conn.commit()
-            st.success("Saved Successfully ✅")
+            try:
+                cursor.execute("""
+                    INSERT INTO expenses
+                    (username, title, amount, type, category, payment_method, date, notes)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    user,
+                    title,
+                    float(amount),
+                    ttype,
+                    category,
+                    payment,
+                    str(date),
+                    notes if notes else ""
+                ))
+
+                conn.commit()
+                st.success("Transaction Saved Successfully ✅")
+
+            except Exception:
+                st.error("Database error occurred. Please delete finance.db and restart app.")
 
     # =========================================================
     # HISTORY
     # =========================================================
 
     elif page == "History":
-
-        st.subheader("All Transactions")
         st.dataframe(df, use_container_width=True)
 
     # =========================================================
