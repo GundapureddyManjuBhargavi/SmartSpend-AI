@@ -6,9 +6,9 @@ import plotly.graph_objects as go
 from datetime import datetime
 import hashlib
 
-# ======================================================
+# =========================================================
 # PAGE CONFIG
-# ======================================================
+# =========================================================
 
 st.set_page_config(
     page_title="SmartSpend AI Pro",
@@ -16,9 +16,9 @@ st.set_page_config(
     layout="wide"
 )
 
-# ======================================================
+# =========================================================
 # DATABASE CONNECTION
-# ======================================================
+# =========================================================
 
 conn = sqlite3.connect(
     "finance.db",
@@ -27,87 +27,46 @@ conn = sqlite3.connect(
 
 cursor = conn.cursor()
 
-# ======================================================
+# =========================================================
 # CREATE USERS TABLE
-# ======================================================
+# =========================================================
 
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT,
+    username TEXT UNIQUE,
     password TEXT
 )
 """)
 
-# ======================================================
+# =========================================================
 # CREATE EXPENSES TABLE
-# ======================================================
+# =========================================================
 
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS expenses (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT,
     amount REAL,
-    category TEXT
+    category TEXT,
+    payment_method TEXT,
+    date TEXT,
+    notes TEXT
 )
 """)
 
 conn.commit()
 
-# ======================================================
-# UPDATE OLD DATABASE AUTOMATICALLY
-# ======================================================
-
-columns = []
-
-cursor.execute(
-    "PRAGMA table_info(expenses)"
-)
-
-table_info = cursor.fetchall()
-
-for column in table_info:
-    columns.append(column[1])
-
-# ADD payment_method COLUMN
-
-if "payment_method" not in columns:
-
-    cursor.execute("""
-    ALTER TABLE expenses
-    ADD COLUMN payment_method TEXT
-    """)
-
-# ADD date COLUMN
-
-if "date" not in columns:
-
-    cursor.execute("""
-    ALTER TABLE expenses
-    ADD COLUMN date TEXT
-    """)
-
-# ADD notes COLUMN
-
-if "notes" not in columns:
-
-    cursor.execute("""
-    ALTER TABLE expenses
-    ADD COLUMN notes TEXT
-    """)
-
-conn.commit()
-
-# ======================================================
+# =========================================================
 # SESSION STATE
-# ======================================================
+# =========================================================
 
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
-# ======================================================
-# PASSWORD HASH FUNCTION
-# ======================================================
+# =========================================================
+# PASSWORD HASH
+# =========================================================
 
 def hash_password(password):
 
@@ -115,9 +74,9 @@ def hash_password(password):
         password.encode()
     ).hexdigest()
 
-# ======================================================
+# =========================================================
 # LOGIN / SIGNUP PAGE
-# ======================================================
+# =========================================================
 
 if not st.session_state.logged_in:
 
@@ -131,9 +90,9 @@ if not st.session_state.logged_in:
         ]
     )
 
-    # ==================================================
+    # =====================================================
     # SIGNUP
-    # ==================================================
+    # =====================================================
 
     if auth_menu == "Signup":
 
@@ -158,27 +117,35 @@ if not st.session_state.logged_in:
 
             else:
 
-                cursor.execute(
-                    """
-                    INSERT INTO users
-                    (username, password)
-                    VALUES (?, ?)
-                    """,
-                    (
-                        new_user,
-                        hash_password(new_pass)
+                try:
+
+                    cursor.execute(
+                        """
+                        INSERT INTO users
+                        (username, password)
+                        VALUES (?, ?)
+                        """,
+                        (
+                            new_user,
+                            hash_password(new_pass)
+                        )
                     )
-                )
 
-                conn.commit()
+                    conn.commit()
 
-                st.success(
-                    "Account Created Successfully ✅"
-                )
+                    st.success(
+                        "Account Created Successfully ✅"
+                    )
 
-    # ==================================================
+                except:
+
+                    st.error(
+                        "Username already exists."
+                    )
+
+    # =====================================================
     # LOGIN
-    # ==================================================
+    # =====================================================
 
     elif auth_menu == "Login":
 
@@ -224,15 +191,15 @@ if not st.session_state.logged_in:
                     "Invalid Username or Password"
                 )
 
-# ======================================================
-# MAIN APP
-# ======================================================
+# =========================================================
+# MAIN APPLICATION
+# =========================================================
 
 else:
 
-    # ==================================================
+    # =====================================================
     # SIDEBAR
-    # ==================================================
+    # =====================================================
 
     st.sidebar.title("💡 SmartSpend AI Pro")
 
@@ -254,9 +221,9 @@ else:
         ]
     )
 
-    # ==================================================
+    # =====================================================
     # THEME COLORS
-    # ==================================================
+    # =====================================================
 
     if dark_mode:
 
@@ -272,9 +239,9 @@ else:
         card_bg = "#F0F2F6"
         input_bg = "#FFFFFF"
 
-    # ==================================================
+    # =====================================================
     # PROFESSIONAL CSS
-    # ==================================================
+    # =====================================================
 
     st.markdown(f"""
     <style>
@@ -293,9 +260,7 @@ else:
     p,
     span,
     label,
-    div,
-    textarea,
-    input {{
+    div {{
         color: {text_color} !important;
     }}
 
@@ -320,7 +285,6 @@ else:
 
     .stTextInput input,
     .stNumberInput input,
-    .stDateInput input,
     textarea {{
 
         background-color: {input_bg} !important;
@@ -336,11 +300,27 @@ else:
         border: 2px solid #00FFD1 !important;
     }}
 
-    /* PLACEHOLDER */
+    /* DATE INPUT FIX */
 
-    input::placeholder,
-    textarea::placeholder {{
-        color: gray !important;
+    .stDateInput input {{
+
+        background-color: {input_bg} !important;
+
+        color: white !important;
+
+        -webkit-text-fill-color: white !important;
+
+        border-radius: 10px !important;
+
+        border: 2px solid #00FFD1 !important;
+    }}
+
+    .stDateInput div {{
+        color: white !important;
+    }}
+
+    .stDateInput svg {{
+        fill: white !important;
     }}
 
     /* SELECT BOX */
@@ -360,7 +340,7 @@ else:
         color: {text_color} !important;
     }}
 
-    /* BUTTON */
+    /* BUTTONS */
 
     .stButton > button {{
 
@@ -369,6 +349,8 @@ else:
         color: black !important;
 
         border-radius: 10px !important;
+
+        border: none !important;
 
         font-weight: bold !important;
 
@@ -387,6 +369,7 @@ else:
     /* METRICS */
 
     [data-testid="stMetricValue"] {{
+
         color: #00FFD1 !important;
 
         font-size: 30px;
@@ -406,10 +389,6 @@ else:
         visibility: hidden;
     }}
 
-    hr {{
-        border: 1px solid gray;
-    }}
-
     center {{
         color: {text_color} !important;
         font-size: 16px;
@@ -419,22 +398,20 @@ else:
     </style>
     """, unsafe_allow_html=True)
 
-    # ==================================================
+    # =====================================================
     # TITLE
-    # ==================================================
+    # =====================================================
 
     st.title("💰 SmartSpend AI Pro")
 
-    # ==================================================
+    # =====================================================
     # LOAD DATA
-    # ==================================================
+    # =====================================================
 
     df = pd.read_sql_query(
         "SELECT * FROM expenses",
         conn
     )
-
-    # FIX DATE COLUMN
 
     if "date" in df.columns:
 
@@ -447,15 +424,13 @@ else:
 
         df["date"] = pd.Timestamp.now()
 
-    # ==================================================
+    # =====================================================
     # DASHBOARD
-    # ==================================================
+    # =====================================================
 
     if menu == "🏠 Dashboard":
 
-        st.subheader(
-            "📊 Financial Dashboard"
-        )
+        st.subheader("📊 Financial Dashboard")
 
         total_expense = (
             df["amount"].sum()
@@ -533,9 +508,9 @@ else:
                     use_container_width=True
                 )
 
-    # ==================================================
+    # =====================================================
     # ADD EXPENSE
-    # ==================================================
+    # =====================================================
 
     elif menu == "➕ Add Expense":
 
@@ -615,15 +590,13 @@ else:
 
             st.balloons()
 
-    # ==================================================
+    # =====================================================
     # VIEW EXPENSES
-    # ==================================================
+    # =====================================================
 
     elif menu == "📋 View Expenses":
 
-        st.subheader(
-            "📋 Expense Records"
-        )
+        st.subheader("📋 Expense Records")
 
         if not df.empty:
 
@@ -656,15 +629,13 @@ else:
                 "text/csv"
             )
 
-    # ==================================================
+    # =====================================================
     # ANALYTICS
-    # ==================================================
+    # =====================================================
 
     elif menu == "📈 Analytics":
 
-        st.subheader(
-            "📈 Expense Analytics"
-        )
+        st.subheader("📈 Expense Analytics")
 
         if not df.empty:
 
@@ -692,9 +663,9 @@ else:
                 use_container_width=True
             )
 
-    # ==================================================
+    # =====================================================
     # SAVINGS GOALS
-    # ==================================================
+    # =====================================================
 
     elif menu == "🎯 Savings Goals":
 
@@ -727,9 +698,9 @@ else:
             f"₹{remaining:.2f}"
         )
 
-    # ==================================================
+    # =====================================================
     # AI INSIGHTS
-    # ==================================================
+    # =====================================================
 
     elif menu == "🤖 AI Insights":
 
@@ -769,9 +740,9 @@ else:
                 "💡 Track subscriptions carefully."
             )
 
-    # ==================================================
+    # =====================================================
     # LOGOUT
-    # ==================================================
+    # =====================================================
 
     elif menu == "🚪 Logout":
 
@@ -779,9 +750,9 @@ else:
 
         st.rerun()
 
-    # ==================================================
+    # =====================================================
     # FOOTER
-    # ==================================================
+    # =====================================================
 
     st.markdown("""
     <hr>
