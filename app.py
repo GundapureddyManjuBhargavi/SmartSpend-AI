@@ -225,20 +225,38 @@ else:
     # THEME COLORS
     # =====================================================
 
-    if dark_mode:
+   # =====================================================
+# THEME COLORS
+# =====================================================
 
-        bg_color = "#0E1117"
-        text_color = "#FFFFFF"
-        card_bg = "#161B22"
-        input_bg = "#1E1E1E"
+if dark_mode:
 
-    else:
+    bg_color = "#0E1117"
+    text_color = "#FFFFFF"
+    card_bg = "#161B22"
+    input_bg = "#1E1E1E"
 
-        bg_color = "#FFFFFF"
-        text_color = "#000000"
-        card_bg = "#F0F2F6"
-        input_bg = "#FFFFFF"
+    input_text = "#FFFFFF"
 
+    dropdown_bg = "#1E1E1E"
+
+    dropdown_text = "#FFFFFF"
+
+else:
+
+    bg_color = "#F7F9FC"
+
+    text_color = "#000000"
+
+    card_bg = "#FFFFFF"
+
+    input_bg = "#FFFFFF"
+
+    input_text = "#000000"
+
+    dropdown_bg = "#FFFFFF"
+
+    dropdown_text = "#000000"
     # =====================================================
     # PERFECT PROFESSIONAL CSS
     # =====================================================
@@ -281,7 +299,7 @@ else:
 
         background-color: #1E1E1E !important;
 
-        color: white !important;
+        color: {input_text} !important;
 
         -webkit-text-fill-color: white !important;
 
@@ -298,7 +316,7 @@ else:
 
         background-color: #1E1E1E !important;
 
-        color: white !important;
+       color: {input_text} !important;
 
         -webkit-text-fill-color: white !important;
 
@@ -308,55 +326,54 @@ else:
     }}
 
     .stDateInput div {{
-        color: white !important;
+       color: {input_text} !important;
     }}
 
     .stDateInput svg {{
         fill: white !important;
     }}
+/* SELECT BOX FIX */
 
-    /* SELECT BOX FIX */
+div[data-baseweb="select"] > div {
 
-    div[data-baseweb="select"] > div {{
+    background-color: {dropdown_bg} !important;
 
-        background-color: #1E1E1E !important;
+    color: {dropdown_text} !important;
 
-        color: white !important;
+    border: 2px solid #00FFD1 !important;
 
-        border: 2px solid #00FFD1 !important;
+    border-radius: 10px !important;
+}
 
-        border-radius: 10px !important;
-    }}
+div[data-baseweb="select"] span {
 
-    /* SELECTED TEXT */
+    color: {dropdown_text} !important;
+}
 
-    div[data-baseweb="select"] span {{
-        color: white !important;
-    }}
+/* DROPDOWN MENU */
 
-    /* DROPDOWN MENU */
+ul {
 
-    ul {{
-        background-color: #1E1E1E !important;
-    }}
+    background-color: {dropdown_bg} !important;
+}
 
-    /* DROPDOWN OPTIONS */
+/* OPTIONS */
 
-    li {{
+li {
 
-        background-color: #1E1E1E !important;
+    background-color: {dropdown_bg} !important;
 
-        color: white !important;
-    }}
+    color: {dropdown_text} !important;
+}
 
-    /* HOVER OPTION */
+/* HOVER */
 
-    li:hover {{
+li:hover {
 
-        background-color: #00FFD1 !important;
+    background-color: #00FFD1 !important;
 
-        color: black !important;
-    }}
+    color: black !important;
+}
 
     /* BUTTON */
 
@@ -381,7 +398,7 @@ else:
 
         background-color: #00c9a7 !important;
 
-        color: white !important;
+       color: {input_text} !important;
     }}
 
     /* METRICS */
