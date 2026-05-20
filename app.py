@@ -13,23 +13,16 @@ import hashlib
 st.set_page_config(
     page_title="SmartSpend AI Pro",
     page_icon="💰",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
 # =========================================================
-# DATABASE CONNECTION
+# DATABASE
 # =========================================================
 
-conn = sqlite3.connect(
-    "finance.db",
-    check_same_thread=False
-)
-
+conn = sqlite3.connect("finance.db", check_same_thread=False)
 cursor = conn.cursor()
-
-# =========================================================
-# CREATE USERS TABLE
-# =========================================================
 
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS users (
@@ -38,10 +31,6 @@ CREATE TABLE IF NOT EXISTS users (
     password TEXT
 )
 """)
-
-# =========================================================
-# CREATE EXPENSES TABLE
-# =========================================================
 
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS expenses (
@@ -64,132 +53,74 @@ conn.commit()
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
+if "dark_mode" not in st.session_state:
+    st.session_state.dark_mode = True
+
 # =========================================================
-# PASSWORD HASH FUNCTION
+# PASSWORD HASH
 # =========================================================
 
 def hash_password(password):
-
-    return hashlib.sha256(
-        password.encode()
-    ).hexdigest()
+    return hashlib.sha256(password.encode()).hexdigest()
 
 # =========================================================
-# LOGIN / SIGNUP
+# AUTH PAGE
 # =========================================================
 
 if not st.session_state.logged_in:
 
     st.title("🔐 SmartSpend AI Pro")
 
-    auth_menu = st.sidebar.radio(
-        "Choose Option",
-        [
-            "Login",
-            "Signup"
-        ]
-    )
+    auth_menu = st.sidebar.radio("Choose Option", ["Login", "Signup"])
 
-    # =====================================================
-    # SIGNUP
-    # =====================================================
-
+    # ---------------- SIGNUP ----------------
     if auth_menu == "Signup":
 
         st.subheader("📝 Create Account")
 
-        new_user = st.text_input(
-            "Username"
-        )
-
-        new_pass = st.text_input(
-            "Password",
-            type="password"
-        )
+        new_user = st.text_input("Username")
+        new_pass = st.text_input("Password", type="password")
 
         if st.button("Create Account"):
 
             if new_user == "" or new_pass == "":
-
-                st.error(
-                    "Please fill all fields."
-                )
-
+                st.error("Please fill all fields.")
             else:
-
                 try:
-
-                    cursor.execute(
-                        """
-                        INSERT INTO users
-                        (username, password)
+                    cursor.execute("""
+                        INSERT INTO users (username, password)
                         VALUES (?, ?)
-                        """,
-                        (
-                            new_user,
-                            hash_password(new_pass)
-                        )
-                    )
+                    """, (new_user, hash_password(new_pass)))
 
                     conn.commit()
-
-                    st.success(
-                        "Account Created Successfully ✅"
-                    )
+                    st.success("Account Created Successfully ✅")
 
                 except:
+                    st.error("Username already exists.")
 
-                    st.error(
-                        "Username already exists."
-                    )
-
-    # =====================================================
-    # LOGIN
-    # =====================================================
-
+    # ---------------- LOGIN ----------------
     elif auth_menu == "Login":
 
         st.subheader("🔑 Login")
 
-        username = st.text_input(
-            "Username"
-        )
-
-        password = st.text_input(
-            "Password",
-            type="password"
-        )
+        username = st.text_input("Username")
+        password = st.text_input("Password", type="password")
 
         if st.button("Login"):
 
-            cursor.execute(
-                """
+            cursor.execute("""
                 SELECT * FROM users
                 WHERE username=? AND password=?
-                """,
-                (
-                    username,
-                    hash_password(password)
-                )
-            )
+            """, (username, hash_password(password)))
 
             user = cursor.fetchone()
 
             if user:
-
                 st.session_state.logged_in = True
-
-                st.success(
-                    "Login Successful ✅"
-                )
-
+                st.success("Login Successful ✅")
                 st.rerun()
-
             else:
-
-                st.error(
-                    "Invalid Username or Password"
-                )
+                st.error("Invalid Username or Password")
 
 # =========================================================
 # MAIN APP
@@ -197,15 +128,12 @@ if not st.session_state.logged_in:
 
 else:
 
-    # =====================================================
-    # SIDEBAR
-    # =====================================================
-
+    # ---------------- SIDEBAR ----------------
     st.sidebar.title("💡 SmartSpend AI Pro")
 
-    dark_mode = st.sidebar.toggle(
+    st.session_state.dark_mode = st.sidebar.toggle(
         "🌙 Dark Mode",
-        value=True
+        value=st.session_state.dark_mode
     )
 
     menu = st.sidebar.radio(
@@ -221,44 +149,31 @@ else:
         ]
     )
 
+    dark_mode = st.session_state.dark_mode
+
     # =====================================================
-    # THEME COLORS
+    # THEME
     # =====================================================
 
-   # =====================================================
-# THEME COLORS
-# =====================================================
+    if dark_mode:
+        bg_color = "#0E1117"
+        text_color = "#FFFFFF"
+        card_bg = "#161B22"
+        input_bg = "#1E1E1E"
+        input_text = "#FFFFFF"
+        dropdown_bg = "#1E1E1E"
+        dropdown_text = "#FFFFFF"
+    else:
+        bg_color = "#F7F9FC"
+        text_color = "#000000"
+        card_bg = "#FFFFFF"
+        input_bg = "#FFFFFF"
+        input_text = "#000000"
+        dropdown_bg = "#FFFFFF"
+        dropdown_text = "#000000"
 
-if dark_mode:
-
-    bg_color = "#0E1117"
-    text_color = "#FFFFFF"
-    card_bg = "#161B22"
-    input_bg = "#1E1E1E"
-
-    input_text = "#FFFFFF"
-
-    dropdown_bg = "#1E1E1E"
-
-    dropdown_text = "#FFFFFF"
-
-else:
-
-    bg_color = "#F7F9FC"
-
-    text_color = "#000000"
-
-    card_bg = "#FFFFFF"
-
-    input_bg = "#FFFFFF"
-
-    input_text = "#000000"
-
-    dropdown_bg = "#FFFFFF"
-
-    dropdown_text = "#000000"
     # =====================================================
-    # PERFECT PROFESSIONAL CSS
+    # CSS
     # =====================================================
 
     st.markdown(f"""
@@ -269,16 +184,11 @@ else:
         color: {text_color};
     }}
 
-    html,
-    body,
-    p,
-    span,
-    label,
-    div {{
+    html, body, p, span, label, div {{
         color: {text_color} !important;
     }}
 
-    h1, h2, h3, h4 {{
+    h1, h2, h3 {{
         color: #00FFD1 !important;
         font-weight: bold;
     }}
@@ -291,175 +201,52 @@ else:
         color: {text_color} !important;
     }}
 
-    /* INPUT BOXES */
-
     .stTextInput input,
     .stNumberInput input,
     textarea {{
-
-        background-color: #1E1E1E !important;
-
+        background-color: {input_bg} !important;
         color: {input_text} !important;
-
-        -webkit-text-fill-color: white !important;
-
-        caret-color: white !important;
-
+        -webkit-text-fill-color: {input_text} !important;
+        caret-color: {input_text} !important;
         border-radius: 10px !important;
-
         border: 2px solid #00FFD1 !important;
     }}
-
-    /* DATE INPUT */
-
-    .stDateInput input {{
-
-        background-color: #1E1E1E !important;
-
-       color: {input_text} !important;
-
-        -webkit-text-fill-color: white !important;
-
-        border: 2px solid #00FFD1 !important;
-
-        border-radius: 10px !important;
-    }}
-
-    .stDateInput div {{
-       color: {input_text} !important;
-    }}
-
-    .stDateInput svg {{
-        fill: white !important;
-    }}
-/* SELECT BOX FIX */
-
-div[data-baseweb="select"] > div {
-
-    background-color: {dropdown_bg} !important;
-
-    color: {dropdown_text} !important;
-
-    border: 2px solid #00FFD1 !important;
-
-    border-radius: 10px !important;
-}
-
-div[data-baseweb="select"] span {
-
-    color: {dropdown_text} !important;
-}
-
-/* DROPDOWN MENU */
-
-ul {
-
-    background-color: {dropdown_bg} !important;
-}
-
-/* OPTIONS */
-
-li {
-
-    background-color: {dropdown_bg} !important;
-
-    color: {dropdown_text} !important;
-}
-
-/* HOVER */
-
-li:hover {
-
-    background-color: #00FFD1 !important;
-
-    color: black !important;
-}
-
-    /* BUTTON */
 
     .stButton > button {{
-
         background-color: #00FFD1 !important;
-
         color: black !important;
-
         border-radius: 10px !important;
-
         font-weight: bold !important;
-
-        border: none !important;
-
-        height: 3em;
-
         width: 100%;
+        height: 3em;
     }}
 
     .stButton > button:hover {{
-
         background-color: #00c9a7 !important;
-
-       color: {input_text} !important;
+        color: {input_text} !important;
     }}
-
-    /* METRICS */
 
     [data-testid="stMetricValue"] {{
-
         color: #00FFD1 !important;
-
-        font-size: 30px;
-
+        font-size: 28px;
         font-weight: bold;
     }}
-
-    /* TABLE */
-
-    table {{
-        color: {text_color} !important;
-    }}
-
-    /* FOOTER */
 
     footer {{
         visibility: hidden;
-    }}
-
-    center {{
-        color: {text_color} !important;
-
-        font-size: 16px;
-
-        font-weight: bold;
     }}
 
     </style>
     """, unsafe_allow_html=True)
 
     # =====================================================
-    # TITLE
-    # =====================================================
-
-    st.title("💰 SmartSpend AI Pro")
-
-    # =====================================================
     # LOAD DATA
     # =====================================================
 
-    df = pd.read_sql_query(
-        "SELECT * FROM expenses",
-        conn
-    )
+    df = pd.read_sql_query("SELECT * FROM expenses", conn)
 
     if "date" in df.columns:
-
-        df["date"] = pd.to_datetime(
-            df["date"],
-            errors="coerce"
-        )
-
-    else:
-
-        df["date"] = pd.Timestamp.now()
+        df["date"] = pd.to_datetime(df["date"], errors="coerce")
 
     # =====================================================
     # DASHBOARD
@@ -469,81 +256,22 @@ li:hover {
 
         st.subheader("📊 Financial Dashboard")
 
-        total_expense = (
-            df["amount"].sum()
-            if not df.empty else 0
-        )
+        total = df["amount"].sum() if not df.empty else 0
+        avg = df["amount"].mean() if not df.empty else 0
+        highest = df["amount"].max() if not df.empty else 0
 
-        total_records = len(df)
+        col1, col2, col3 = st.columns(3)
 
-        avg_expense = (
-            df["amount"].mean()
-            if not df.empty else 0
-        )
-
-        highest_expense = (
-            df["amount"].max()
-            if not df.empty else 0
-        )
-
-        col1, col2, col3, col4 = st.columns(4)
-
-        col1.metric(
-            "💸 Total Expenses",
-            f"₹{total_expense:.2f}"
-        )
-
-        col2.metric(
-            "📋 Records",
-            total_records
-        )
-
-        col3.metric(
-            "📈 Average",
-            f"₹{avg_expense:.2f}"
-        )
-
-        col4.metric(
-            "🔥 Highest",
-            f"₹{highest_expense:.2f}"
-        )
+        col1.metric("💸 Total", f"₹{total:.2f}")
+        col2.metric("📈 Average", f"₹{avg:.2f}")
+        col3.metric("🔥 Highest", f"₹{highest:.2f}")
 
         if not df.empty:
 
-            category_data = (
-                df.groupby("category")["amount"]
-                .sum()
-                .reset_index()
-            )
+            cat = df.groupby("category")["amount"].sum().reset_index()
 
-            col1, col2 = st.columns(2)
-
-            with col1:
-
-                fig = px.pie(
-                    category_data,
-                    names="category",
-                    values="amount",
-                    hole=0.5
-                )
-
-                st.plotly_chart(
-                    fig,
-                    use_container_width=True
-                )
-
-            with col2:
-
-                fig2 = px.bar(
-                    category_data,
-                    x="category",
-                    y="amount"
-                )
-
-                st.plotly_chart(
-                    fig2,
-                    use_container_width=True
-                )
+            fig1 = px.pie(cat, names="category", values="amount", hole=0.5)
+            st.plotly_chart(fig1, use_container_width=True)
 
     # =====================================================
     # ADD EXPENSE
@@ -553,118 +281,48 @@ li:hover {
 
         st.subheader("➕ Add Expense")
 
-        title = st.text_input(
-            "Expense Title"
-        )
+        title = st.text_input("Title")
+        amount = st.number_input("Amount", min_value=0.0)
 
-        amount = st.number_input(
-            "Amount",
-            min_value=0.0
-        )
+        category = st.selectbox("Category",
+            ["Food","Travel","Shopping","Bills","Other"])
 
-        category = st.selectbox(
-            "Category",
-            [
-                "Food",
-                "Travel",
-                "Shopping",
-                "Bills",
-                "Entertainment",
-                "Health",
-                "Education",
-                "Other"
-            ]
-        )
+        payment = st.selectbox("Payment", ["Cash","UPI","Card"])
 
-        payment_method = st.selectbox(
-            "Payment Method",
-            [
-                "Cash",
-                "UPI",
-                "Debit Card",
-                "Credit Card"
-            ]
-        )
+        date = st.date_input("Date")
+        notes = st.text_area("Notes")
 
-        expense_date = st.date_input(
-            "Expense Date"
-        )
+        if st.button("Save Expense"):
 
-        notes = st.text_area(
-            "Notes"
-        )
-
-        if st.button("💾 Save Expense"):
-
-            cursor.execute(
-                """
+            cursor.execute("""
                 INSERT INTO expenses
-                (
-                    title,
-                    amount,
-                    category,
-                    payment_method,
-                    date,
-                    notes
-                )
+                (title, amount, category, payment_method, date, notes)
                 VALUES (?, ?, ?, ?, ?, ?)
-                """,
-                (
-                    title,
-                    amount,
-                    category,
-                    payment_method,
-                    str(expense_date),
-                    notes
-                )
-            )
+            """, (title, amount, category, payment, str(date), notes))
 
             conn.commit()
-
-            st.success(
-                "Expense Added Successfully ✅"
-            )
-
+            st.success("Saved ✅")
             st.balloons()
 
     # =====================================================
-    # VIEW EXPENSES
+    # VIEW
     # =====================================================
 
     elif menu == "📋 View Expenses":
 
-        st.subheader("📋 Expense Records")
+        st.subheader("📋 Records")
 
-        if not df.empty:
+        search = st.text_input("Search")
 
-            search = st.text_input(
-                "🔍 Search Expense"
-            )
+        filtered = df[df["title"].str.contains(search, case=False, na=False)]
 
-            filtered_df = df[
-                df["title"]
-                .str.contains(
-                    search,
-                    case=False,
-                    na=False
-                )
-            ]
+        st.dataframe(filtered, use_container_width=True)
 
-            st.dataframe(
-                filtered_df,
-                use_container_width=True
-            )
-
-            csv = filtered_df.to_csv(
-                index=False
-            )
-
-            st.download_button(
-                "📥 Download CSV",
-                csv,
-                "expenses.csv",
-                "text/csv"
-            )
+        st.download_button(
+            "Download CSV",
+            filtered.to_csv(index=False),
+            "expenses.csv"
+        )
 
     # =====================================================
     # ANALYTICS
@@ -672,68 +330,32 @@ li:hover {
 
     elif menu == "📈 Analytics":
 
-        st.subheader("📈 Expense Analytics")
+        st.subheader("📈 Analytics")
 
         if not df.empty:
 
-            monthly_data = (
-                df.groupby(
-                    df["date"]
-                    .dt.strftime("%Y-%m")
-                )["amount"]
-                .sum()
-                .reset_index()
-            )
+            monthly = df.groupby(df["date"].dt.strftime("%Y-%m"))["amount"].sum().reset_index()
 
             fig = go.Figure()
+            fig.add_trace(go.Scatter(x=monthly["date"], y=monthly["amount"], mode="lines+markers"))
 
-            fig.add_trace(
-                go.Scatter(
-                    x=monthly_data["date"],
-                    y=monthly_data["amount"],
-                    mode="lines+markers"
-                )
-            )
-
-            st.plotly_chart(
-                fig,
-                use_container_width=True
-            )
+            st.plotly_chart(fig, use_container_width=True)
 
     # =====================================================
-    # SAVINGS GOALS
+    # SAVINGS
     # =====================================================
 
     elif menu == "🎯 Savings Goals":
 
-        st.subheader(
-            "🎯 Savings Goal Tracker"
-        )
+        st.subheader("🎯 Goals")
 
-        goal = st.number_input(
-            "Enter Savings Goal",
-            min_value=1000,
-            value=10000
-        )
+        goal = st.number_input("Goal", min_value=1000, value=10000)
 
-        spent = (
-            df["amount"].sum()
-            if not df.empty else 0
-        )
+        spent = df["amount"].sum() if not df.empty else 0
 
-        remaining = goal - spent
+        st.progress(min(spent / goal, 1.0))
 
-        progress = min(
-            spent / goal,
-            1.0
-        )
-
-        st.progress(progress)
-
-        st.metric(
-            "Remaining Savings",
-            f"₹{remaining:.2f}"
-        )
+        st.metric("Remaining", f"₹{goal - spent:.2f}")
 
     # =====================================================
     # AI INSIGHTS
@@ -741,59 +363,20 @@ li:hover {
 
     elif menu == "🤖 AI Insights":
 
-        st.subheader(
-            "🤖 AI Financial Insights"
-        )
+        st.subheader("🤖 Insights")
 
         if not df.empty:
 
-            highest_category = (
-                df.groupby("category")["amount"]
-                .sum()
-                .idxmax()
-            )
+            top = df.groupby("category")["amount"].sum().idxmax()
 
-            highest_amount = (
-                df.groupby("category")["amount"]
-                .sum()
-                .max()
-            )
-
-            st.success(
-                f"Highest spending category: "
-                f"{highest_category} "
-                f"(₹{highest_amount:.2f})"
-            )
-
-            st.info(
-                "💡 Save at least 20% monthly."
-            )
-
-            st.info(
-                "💡 Reduce unnecessary shopping."
-            )
-
-            st.info(
-                "💡 Track subscriptions carefully."
-            )
+            st.success(f"Top spending: {top}")
+            st.info("Save 20% monthly 💡")
+            st.info("Avoid unnecessary shopping 🛍️")
 
     # =====================================================
     # LOGOUT
     # =====================================================
 
     elif menu == "🚪 Logout":
-
         st.session_state.logged_in = False
-
         st.rerun()
-
-    # =====================================================
-    # FOOTER
-    # =====================================================
-
-    st.markdown("""
-    <hr>
-    <center>
-    Made with ❤️ by Gundapureddy Manju Bhargavi
-    </center>
-    """, unsafe_allow_html=True)
